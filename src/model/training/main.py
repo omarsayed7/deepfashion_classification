@@ -194,8 +194,7 @@ def main(args):
     print(f'TRAINING COMPLETE  -- V{args.experiment_version}')
 
 
-    logging_df = pd.DataFrame(columns = ['time', 'exp_dir', 'best_val_loss', 'best_val_acc', 'model_name', 'freeze_backbone', 'train_loss', 'args'])
-    #logging_df = pd.read_csv(f"{models_dir}/logging/experiments_logs.csv")
+    logging_df = pd.read_csv(f"{models_dir}/logging/experiments_logs.csv")
 
     logging_df = logging_df.append({'time':datetime.now(), 'best_val_loss': best_val_loss, 
                                     'exp_dir': VERSION_NAME,
@@ -244,6 +243,20 @@ def main(args):
         top_losses_df.sort_values('Loss', inplace=True, ascending=[False])
         top_losses_df.to_csv(f"{models_dir}/{VERSION_NAME}/top_losses.csv")
 
+def setup(args):
+    main_data_dir = Path("../../../data")
+    models_dir = Path("../../../models")
+
+    dir_list = [f"{main_data_dir}", f"{models_dir}", f"{models_dir}/logging"]
+    for directory in dir_list:
+        if not os.path.exists(directory):
+            # If it doesn't exist, create it
+            os.makedirs(directory)
+    #Creating the experiments logging csv file 
+    logging_df = pd.DataFrame(columns = ['time', 'exp_dir', 'best_val_loss', 'best_val_acc', 'model_name', 'freeze_backbone', 'train_loss', 'args'])
+    logging_df = logging_df.loc[:, ~logging_df.columns.str.contains('^Unnamed')]
+    logging_df.to_csv(f"{models_dir}/logging/experiments_logs.csv")
+    
 if __name__ == "__main__":
     '''
     Main function, used to parse the arguments and call the main function
@@ -261,8 +274,13 @@ if __name__ == "__main__":
     parser.add_argument('-use_wandb', '--use_wandb', type= bool, help= 'Track the experiments with wandb', default=False)
     parser.add_argument('-eval_mode', '--eval_mode', type= str, help= 'Evaluation subset of data (train, valid, or test)', default='valid')
     parser.add_argument('-calculate_top_losses', '--calculate_top_losses', type= bool, help= 'Calculate top losses of the training data', default=True)
+    parser.add_argument('-script_mode', '--script_mode', type= str, help= 'Either train or setup the data and folder structure', default='train')
     args = parser.parse_args()
 
     args1 = args
     args1.experiment_version = 1
-    main(args1)
+    args1.script_mode = 'train'
+    if args1.script_mode == 'train':
+        main(args1)
+    elif args1.script_mode == 'setup':
+        setup(args1)

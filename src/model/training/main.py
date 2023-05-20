@@ -73,10 +73,9 @@ def main(args):
 
     #Update the number of classes of the network
     num_classes = len(set(fashion_df['label_id'].tolist()))
-    print("aaa", num_classes)
     if args.use_wandb:
         wandb.init(
-            project="celebrity-recognition",
+            project="fashion-classification",
             # Set entity to specify your username or team name
             # ex: entity="wandb",
             config={
@@ -170,6 +169,8 @@ def main(args):
     best_val_acc = None
     # start the training
     print("Start training experiment ", args.experiment_version, " : ", " ".join(VERSION_NAME.split("_")))
+    if args.use_wandb:
+        wandb.watch(model, log_freq=epochs)
     for epoch in range(epochs):
         print(f"[INFO]: Epoch {epoch+1} of {epochs} -- V{args.experiment_version}")
         train_epoch_loss, train_epoch_acc = train(net, train_loader, optimizer, 
@@ -180,6 +181,9 @@ def main(args):
         valid_loss.append(valid_epoch_loss)
         train_acc.append(train_epoch_acc)
         valid_acc.append(valid_epoch_acc)
+        if args.use_wandb:
+            wandb.log({"train_loss": train_epoch_loss, "train_acc": train_epoch_acc, 'valid_loss': valid_epoch_loss, 'valid_acc': valid_epoch_acc})
+            
         print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.1f}% - Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.1f}%  -- V{args.experiment_version}")
         # save the best model till now if we have the least loss in the current epoch
         best_model_data = save_best_model(valid_epoch_loss, valid_epoch_acc, epoch, net, 

@@ -60,8 +60,8 @@ def main(args):
     #read the fashion dataframe file 
     fashion_df = pd.read_csv(fashion_df_path)
     #split the dataset into train, valid, and test
-    X_train, X_test, y_train, y_test = train_test_split(fashion_df['img_path'].tolist()[:200], fashion_df['label_id'].tolist()[:200],
-                                                    stratify=fashion_df['label_id'].tolist()[:200], 
+    X_train, X_test, y_train, y_test = train_test_split(fashion_df['img_path'].tolist(), fashion_df['label_id'].tolist(),
+                                                    stratify=fashion_df['label_id'].tolist(), 
                                                     test_size=0.13,
                                                     random_state = SEED)
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
@@ -73,6 +73,7 @@ def main(args):
 
     #Update the number of classes of the network
     num_classes = len(set(fashion_df['label_id'].tolist()))
+    print("aaa", num_classes)
     if args.use_wandb:
         wandb.init(
             project="celebrity-recognition",

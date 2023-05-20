@@ -245,7 +245,8 @@ def setup(args):
     main_data_dir = Path("../../../data")
     models_dir = Path("../../../models")
 
-    dir_list = [f"{main_data_dir}", f"{models_dir}", f"{models_dir}/logging"]
+    dir_list = [f"{main_data_dir}", f"{models_dir}", f"{models_dir}/logging", 
+    f"{main_data_dir}/classification_data", f"{main_data_dir}/classification_data/raw_annotations"]
     for directory in dir_list:
         if not os.path.exists(directory):
             # If it doesn't exist, create it

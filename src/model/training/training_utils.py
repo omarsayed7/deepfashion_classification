@@ -111,13 +111,14 @@ def save_model(epochs, model, optimizer, criterion, save_dir, version_name):
     Function to save the trained model to disk.
     """
     print(f"Saving final model...")
+    model_save_time = str(datetime.now()).split(" ")[0]
     torch.save({
-                'time': str(datetime.now()),
+                'time': model_save_time,
                 'epoch': epochs,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
-                }, f'{save_dir}/{version_name}/final_model__{str(datetime.now())}.pth')
+                }, f'{save_dir}/{version_name}/final_model__{model_save_time}.pth')
 
 
 def save_plots(train_acc, valid_acc, train_loss, valid_loss, save_dir, version_name):

@@ -99,10 +99,10 @@ def top_losses(model, criterion, test_dataset, device):
         for i in tqdm(range(len(test_dataset))):
             data, target, img_info = test_dataset.__getitem__(i)
             # forward pass
-            data, labels = data.to(device), target.to(device)
+            data, labels = data, target
             outputs = model(data.unsqueeze(0))
             # calculate the loss
-            loss = criterion(outputs.squeeze(0), labels)
+            loss = criterion(outputs.squeeze(0), torch.tensor(labels))
             # calculate the accuracy
             _, preds = torch.max(outputs.squeeze(0).data, 0)
             valid_running_correct += (preds == labels).sum().item()

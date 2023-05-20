@@ -15,6 +15,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
 from sklearn.model_selection import train_test_split
 from torch.optim.lr_scheduler import StepLR, OneCycleLR
 
@@ -59,8 +60,8 @@ def main(args):
     #read the fashion dataframe file 
     fashion_df = pd.read_csv(fashion_df_path)
     #split the dataset into train, valid, and test
-    X_train, X_test, y_train, y_test = train_test_split(fashion_df['img_path'].tolist(), fashion_df['label_id'].tolist(),
-                                                    stratify=fashion_df['label_id'].tolist(), 
+    X_train, X_test, y_train, y_test = train_test_split(fashion_df['img_path'].tolist()[:200], fashion_df['label_id'].tolist()[:200],
+                                                    stratify=fashion_df['label_id'].tolist()[:200], 
                                                     test_size=0.13,
                                                     random_state = SEED)
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
@@ -124,16 +125,16 @@ def main(args):
                     transforms.ToTensor(),
                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     
-    train_dataset = FashionDataset(X_train, y_train,classification_data, transform)
-    valid_dataset = FashionDataset(X_val, y_val,classification_data, transform)
-    test_dataset = FashionDataset(X_test, y_test,classification_data, transform)
+    train_dataset = FashionDataset(X_train, y_train, classification_data_dir, transform)
+    valid_dataset = FashionDataset(X_val, y_val, classification_data_dir, transform)
+    test_dataset = FashionDataset(X_test, y_test, classification_data_dir, transform)
 
     # ref https://efficientdl.com/faster-deep-learning-in-pytorch-a-guide/#1-consider-using-another-learning-rate-schedule
     train_loader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True
     )
 
-    validiation_loader = DataLoader(
+    validation_loader = DataLoader(
         valid_dataset, batch_size=args.batch_size, shuffle=True
     )
 
@@ -146,7 +147,7 @@ def main(args):
     epochs = args.epochs
     steps_per_epoch = len(train_loader)
 
-    if args.losst == "categorical_crossentropy":
+    if args.loss == "categorical_crossentropy":
         train_criterion= nn.CrossEntropyLoss()
         val_criterion = nn.CrossEntropyLoss()
         
@@ -197,18 +198,10 @@ def main(args):
 
 
     logging_df = pd.read_csv(f"{models_dir}/logging/experiments_logs.csv")
-
-    logging_df = logging_df.append({'time':datetime.now(), 'best_val_loss': best_val_loss, 
-                                    'exp_dir': VERSION_NAME,
-                                    'best_val_acc': best_val_acc, 
-                                    'model_name': args.model_name, 
-                                    'freeze_backbone': args.freeze_backbone, 
-                                    'train_loss':args.loss, 
-                                    'args': args}, ignore_index=True)
-
-    logging_df = logging_df.loc[:, ~logging_df.columns.str.contains('^Unnamed')]
-
-    logging_df.to_csv(f"{models_dir}/logging/experiments_logs.csv")
+    values = [datetime.now(),VERSION_NAME, best_val_loss, best_val_acc, args.model_name, args.freeze_backbone, args.loss, args]
+    logging_df_extended = pd.DataFrame([values], columns = ['time', 'exp_dir', 'best_val_loss', 'best_val_acc', 'model_name', 'freeze_backbone', 'train_loss', 'args'])
+    logging_df = pd.concat([logging_df, logging_df_extended])
+    logging_df.to_csv(f"{models_dir}/logging/experiments_logs.csv", index=False)
 
     #Evaluation
     print(f"Evaluation of the best model on the validation data  -- V{args.experiment_version}")
@@ -219,16 +212,18 @@ def main(args):
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     if evaluate_mode == "valid":
-        test_dataset = FashionDataset(X_val, y_val, classification_data, transform)
+        test_dataset = FashionDataset(X_val, y_val, classification_data_dir, transform)
         test_loader = DataLoader(test_dataset,batch_size=args.batch_size,shuffle = True, pin_memory=True, num_workers = 0)
     elif evaluate_mode == "train":
-        test_dataset = FashionDataset(X_train, y_train, classification_data, transform)
+        test_dataset = FashionDataset(X_train, y_train, classification_data_dir, transform)
         test_loader = DataLoader(test_dataset,batch_size=args.batch_size,shuffle = True, pin_memory=True, num_workers = 0)
     else:
-        test_dataset = FashionDataset(X_test, y_test, classification_data, transform)
+        test_dataset = FashionDataset(X_test, y_test, classification_data_dir, transform)
         test_loader = DataLoader(test_dataset,batch_size=args.batch_size,shuffle = True, pin_memory=True, num_workers = 0)
 
-        
+    model = FashionNet(model_name = args.model_name, num_classes = num_classes, dropout = args.dropout, freeze_backbone = args.freeze_backbone)
+    model.to(device)
+    
     if args.loss == "categorical_crossentropy":
         val_criterion = nn.CrossEntropyLoss()
     
@@ -240,10 +235,10 @@ def main(args):
         f.writelines(cls_report)
 
     if args.calculate_top_losses:
-        test_dataset = FashionDataset(X_train, y_train, classification_data, transform, True)
+        test_dataset = FashionDataset(X_train, y_train, classification_data_dir, transform, True)
         _, top_losses_df = top_losses(model, val_criterion, test_dataset, device = device)
         top_losses_df.sort_values('Loss', inplace=True, ascending=[False])
-        top_losses_df.to_csv(f"{models_dir}/{VERSION_NAME}/top_losses.csv")
+        top_losses_df.to_csv(f"{models_dir}/{VERSION_NAME}/top_losses.csv", index=False)
 
 def setup(args):
     main_data_dir = Path("../../../data")
@@ -256,8 +251,7 @@ def setup(args):
             os.makedirs(directory)
     #Creating the experiments logging csv file 
     logging_df = pd.DataFrame(columns = ['time', 'exp_dir', 'best_val_loss', 'best_val_acc', 'model_name', 'freeze_backbone', 'train_loss', 'args'])
-    logging_df = logging_df.loc[:, ~logging_df.columns.str.contains('^Unnamed')]
-    logging_df.to_csv(f"{models_dir}/logging/experiments_logs.csv")
+    logging_df.to_csv(f"{models_dir}/logging/experiments_logs.csv", index=False)
     
 if __name__ == "__main__":
     '''
@@ -265,7 +259,7 @@ if __name__ == "__main__":
     '''
     parser = argparse.ArgumentParser(description="Configuration of setup and training process")
     parser.add_argument('-experiment_version', '--experiment_version', type= str, help= 'version of experiment')
-    parser.add_argument('-epochs', '--epochs', type= int, help= 'number of epochs', default = 50)
+    parser.add_argument('-epochs', '--epochs', type= int, help= 'number of epochs', default = 1)
     parser.add_argument('-learning_rate', '--learning_rate', type= float, help= 'value of learning rate', default = 0.0001)
     parser.add_argument('-batch_size', '--batch_size', type= int, help= 'training/validation batch size', default = 64)
     parser.add_argument('-loss', '--loss', type= str, help= 'training/validation loss function(categorical_crossentropy or nllloss)', default='categorical_crossentropy')

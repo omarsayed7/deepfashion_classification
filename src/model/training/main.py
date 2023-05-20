@@ -279,7 +279,6 @@ if __name__ == "__main__":
 
     args1 = args
     args1.experiment_version = 1
-    args1.script_mode = 'train'
     if args1.script_mode == 'train':
         main(args1)
     elif args1.script_mode == 'setup':

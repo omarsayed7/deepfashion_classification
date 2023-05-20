@@ -25,6 +25,10 @@ def build_data(raw_annotations_path: Path, save_path:Path):
             image_path = parse_line[0]+".jpg".strip()
             label_id = parse_line[-1].replace(" ", "").replace("\n","").strip()
             label_id = int(label_id)
+            if label_id == 47:
+                label_id = 38 
+            if label_id == 48:
+                label_id = 45
             label_str = image_path.split("/")[1].split("_")[-1].strip()
             label_mapping[label_id] = label_str
             img_path_list.append(image_path)

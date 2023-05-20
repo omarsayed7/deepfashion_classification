@@ -45,7 +45,7 @@ def main(args):
     [Args] args: The arguments passed to the script.
     '''
     VERSION = args.experiment_version
-
+    print(f"[INFO] Starting to training the {VERSION} experiment")
     main_data_dir = Path("../../../data")
     classification_data_dir = Path(main_data_dir / "classification_data")
     models_dir = Path("../../../models")
@@ -241,6 +241,7 @@ def main(args):
         top_losses_df.to_csv(f"{models_dir}/{VERSION_NAME}/top_losses.csv", index=False)
 
 def setup(args):
+    print("[INFO] Starting to Setup the project")
     main_data_dir = Path("../../../data")
     models_dir = Path("../../../models")
 

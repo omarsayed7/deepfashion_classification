@@ -9,13 +9,21 @@ images_dir = Path(main_data_dir / "img")
 raw_annotations_dir = Path(main_data_dir / "raw_annotations")
 raw_annotations_file = Path(raw_annotations_dir / "list_category_img.txt")
 
+def get_key(val, my_dict):
+    '''
+    Helper function to get the key of a value in a dictionary
+    '''
+    for key, value in my_dict.items():
+        if val == value:
+            return key
+    return "key doesn't exist"
+
 
 def build_data(raw_annotations_path: Path, save_path: Path, max_num_images: int, sampling_threshold: int):
     print("[INFO] Starting to build fashion data")
     img_path_list = []
     labels_id_list = []
     labels_str_list = []
-    label_mapping = {}
     f = open(raw_annotations_path, "r")
     for line in f:
         if ".jpg" in line:
@@ -33,7 +41,7 @@ def build_data(raw_annotations_path: Path, save_path: Path, max_num_images: int,
             labels_id_list.append((label_id - 1))
             labels_str_list.append(label_str)
 
-    class_distribution = dict(Counter(labels_id_list))
+    class_distribution = dict(Counter(labels_str_list))
     sampled_classes = []
     for key, value in class_distribution.items():
         if value > sampling_threshold:
@@ -45,18 +53,23 @@ def build_data(raw_annotations_path: Path, save_path: Path, max_num_images: int,
 
     #sample from every class number of images 
     classes_num_images = {}
-    for label_id in set(labels_id_list):
-        classes_num_images[label_id] = 0 
-    
+    label_mapping = {}
+    start_mapping = 0
+    for i, label_str in enumerate(set(labels_str_list)):
+        if label_str in sampled_classes:
+            classes_num_images[label_str] = 0 
+            #build the label mapping from id to str
+            label_mapping[start_mapping] = label_str
+            start_mapping += 1
+    print(label_mapping)
     for i in range(len(labels_id_list)):
-        label_id = labels_id_list[i]
-        if label_id in sampled_classes: 
-            if classes_num_images[label_id] < max_num_images:
+        label_str = labels_str_list[i]
+        if label_str in sampled_classes: 
+            if classes_num_images[label_str] < max_num_images:
                 sampled_img_path_list.append(img_path_list[i])
-                sampled_labels_id_list.append(labels_id_list[i])
+                sampled_labels_id_list.append(get_key(label_str, label_mapping))
                 sampled_labels_str_list.append(labels_str_list[i])
-                label_mapping[label_id] = labels_str_list[i]
-                classes_num_images[label_id] += 1
+                classes_num_images[label_str] += 1
     print(f"[INFO] Distribution of the sampled classes {Counter(sampled_labels_str_list)}")
     print(f"[INFO] Total number of images {len(sampled_img_path_list)}")
     assert len(sampled_img_path_list) == len(sampled_labels_id_list) == len(sampled_labels_str_list)

@@ -3,7 +3,7 @@ import glob
 import argparse
 import numpy as np
 import pandas as pd 
-from path import Path
+from pathlib import Path
 from tqdm import tqdm
 from typing import List
 from datetime import datetime
@@ -15,12 +15,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from sklearn.model_selection import train_test_split
 from torch.optim.lr_scheduler import StepLR, OneCycleLR
 
 #Local imports
 from data_utils import *
 from dataset import FashionDataset
 from training_utils import *
+from evaluation_utils import *
 
 
 warnings.filterwarnings('ignore')

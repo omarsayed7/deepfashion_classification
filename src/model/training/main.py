@@ -100,7 +100,7 @@ def main(args):
     
     #Create version name for saving experiment logs and model
     version_loss = args.loss
-    exp_params = f"{args.model_name}_{args.learning_rate}_{args.lr_scheduler}_{args.batch_size}_{version_loss}_{args.dropout}_{args.epochs}"
+    exp_params = f"{args.model_name}_{args.learning_rate}_{args.lr_scheduler}_{args.batch_size}_{version_loss}_{args.dropout}_{args.freeze_backbone}_{args.epochs}"
     VERSION_NAME = f'{exp_params}_V{VERSION}'
 
         
@@ -170,7 +170,7 @@ def main(args):
     # start the training
     print("Start training experiment ", args.experiment_version, " : ", " ".join(VERSION_NAME.split("_")))
     if args.use_wandb:
-        wandb.watch(model, log_freq=epochs)
+        wandb.watch(net, log_freq=epochs)
     for epoch in range(epochs):
         print(f"[INFO]: Epoch {epoch+1} of {epochs} -- V{args.experiment_version}")
         train_epoch_loss, train_epoch_acc = train(net, train_loader, optimizer, 
@@ -183,7 +183,7 @@ def main(args):
         valid_acc.append(valid_epoch_acc)
         if args.use_wandb:
             wandb.log({"train_loss": train_epoch_loss, "train_acc": train_epoch_acc, 'valid_loss': valid_epoch_loss, 'valid_acc': valid_epoch_acc})
-            
+
         print(f"Training loss: {train_epoch_loss:.3f}, training acc: {train_epoch_acc:.1f}% - Validation loss: {valid_epoch_loss:.3f}, validation acc: {valid_epoch_acc:.1f}%  -- V{args.experiment_version}")
         # save the best model till now if we have the least loss in the current epoch
         best_model_data = save_best_model(valid_epoch_loss, valid_epoch_acc, epoch, net, 
@@ -273,7 +273,7 @@ if __name__ == "__main__":
     parser.add_argument('-dropout', '--dropout', type= float, help= 'value of the dropout', default=0.5)
     parser.add_argument('-lr_scheduler', '--lr_scheduler', type= bool, help= 'Use learning rate scheduler while training', default=True)
     parser.add_argument('-model_name', '--model_name', type= str, help= 'Name of the model we want to train of evaluate with', default="resnet-50")
-    parser.add_argument('-freeze_backbone', '--freeze_backbone', type= bool, help= 'Either freeze the backbone layers or not', default=True)
+    parser.add_argument('-freeze_backbone', '--freeze_backbone', type= bool, help= 'Either freeze the backbone layers or not', default=False)
     parser.add_argument('-use_wandb', '--use_wandb', type= bool, help= 'Track the experiments with wandb', default=False)
     parser.add_argument('-eval_mode', '--eval_mode', type= str, help= 'Evaluation subset of data (train, valid, or test)', default='valid')
     parser.add_argument('-calculate_top_losses', '--calculate_top_losses', type= bool, help= 'Calculate top losses of the training data', default=True)

@@ -4,40 +4,53 @@ import torchvision
 import torch.nn.functional as F
 
 class FashionNet(nn.Module):
-    def __init__(self, model_name: str, num_classes:int, dropout:float, freeze_backbone:bool = True):
+    def __init__(self, model_name: str, num_classes:int, dropout:float, freeze_backbone:bool):
         super(FashionNet, self).__init__()
         self.num_classes =  num_classes
         self.model_name =  model_name
+        self.freeze_backbone = freeze_backbone
 
         if self.model_name == "vgg-16":
             self.model = torchvision.models.vgg16(pretrained=True) 
-            if freeze_backbone:
+            if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
+            else:
+                for param in self.model.parameters():
+                    param.requires_grad = True
             backbone_out = self.model.classifier[6].in_features
             self.model.classifier[6] = nn.Linear(backbone_out, 256)
 
         elif self.model_name == "resnet-50":
             self.model = torchvision.models.resnet50(pretrained=True) 
-            if freeze_backbone:
+            if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
+            else:
+                for param in self.model.parameters():
+                    param.requires_grad = True
             backbone_out = self.model.fc.in_features
             self.model.fc = nn.Linear(backbone_out, 256)
 
         elif self.model_name == "efficientnet-b0":
             self.model = torchvision.models.efficientnet_b0(pretrained=True) 
-            if freeze_backbone:
+            if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
+            else:
+                for param in self.model.parameters():
+                    param.requires_grad = True
             backbone_out = self.model.classifier[1].in_features
             self.model.classifier[1] = nn.Linear(backbone_out, 256)
 
         elif self.model_name == "efficientnet-b7":
             self.model = torchvision.models.efficientnet_b7(pretrained=True) 
-            if freeze_backbone:
+            if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
+            else:
+                for param in self.model.parameters():
+                    param.requires_grad = True
             backbone_out = self.model.classifier[1].in_features
             self.model.classifier[1] = nn.Linear(backbone_out, 256)
 

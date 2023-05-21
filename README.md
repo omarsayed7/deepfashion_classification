@@ -45,6 +45,17 @@ pip install -r requirements.txt
 |       │── mapping.json
 |       │── img
 |       └── raw_annotations
+├── models
+|   |── efficientnet-b0_0.0001_True_64_categorical_crossentropy_0.5_10_V1
+|   |    │── accuracy.png
+|   |    │── args.json
+|   |    │── best_model.pth
+|   |    │── quantized_best_model.pth
+|   |    │── final_model__2023-05-20.pth
+|   |    │── loss.png
+|   |    └── top_losses.csv
+|   └── logging
+|       └── experiments_logs.csv
 ├── src
 |    ├── model
 |    │   │── performance_measurement
@@ -116,7 +127,7 @@ EfficientNet is a mobile friendly pure convolutional model (ConvNet) that propos
 ![picture](assets/efficientnet_overview.png)
 
 With considerably fewer numbers of parameters, the family of models are efficient and also provide better results. 
-The total number of layers in EfficientNet-B0 the total is 237 and in EfficientNet-B7 the total comes out to 813!! But don’t worry all these layers can be made from 5 modules shown below and the stem above.
+The total number of layers in EfficientNet-B0 the total is 237 and in EfficientNet-B7 the total comes out to 813!! But don’t worry all these layers can be made from 5 modules shown below.
 
 ![picture](assets/efficientnet_arch.png)
 
@@ -182,6 +193,13 @@ Val. Macro-F1 | **86.88%**| 84.28%|83.12%|
 Estimated FLOPS | 0.07 s |**0.002 s** |0.03 s| 0.02 s
 FLOPs | 20.23 G |**0.53G** | 6.93 G | 5.41 G
 Estimcated MACCs | 40.46 G |**1.06 G** |13.86 G| 10.82 G
+Overall receptive field | 212 × 212 |299 × 299 |299 × 299| 96 × 96
+
+***Conculsion***
+
+increasing batch size.
+decreasing the dropout 
+decreasing the lr rate 
 
 # Model Selection:
 

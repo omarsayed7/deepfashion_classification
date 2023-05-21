@@ -270,7 +270,7 @@ if __name__ == "__main__":
     parser.add_argument('-learning_rate', '--learning_rate', type= float, help= 'value of learning rate', default = 0.0001)
     parser.add_argument('-batch_size', '--batch_size', type= int, help= 'training/validation batch size', default = 64)
     parser.add_argument('-loss', '--loss', type= str, help= 'training/validation loss function(categorical_crossentropy or nllloss)', default='categorical_crossentropy')
-    parser.add_argument('-dropout', '--dropout', type= float, help= 'value of the dropout', default=0.5)
+    parser.add_argument('-dropout', '--dropout', type= float, help= 'value of the dropout, or put None if you do not need dropout', default=0.5)
     parser.add_argument('-lr_scheduler', '--lr_scheduler', type= bool, help= 'Use learning rate scheduler while training', default=True)
     parser.add_argument('-model_name', '--model_name', type= str, help= 'Name of the model we want to train of evaluate with', default="resnet-50")
     parser.add_argument('-freeze_backbone', '--freeze_backbone', type= bool, help= 'Either freeze the backbone layers or not', default=False)

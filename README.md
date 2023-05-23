@@ -141,7 +141,7 @@ pip install -r requirements.txt
 ```
 # How to use:
 **1-Setup the directories to match the above file structure and create the training logs csv file**
-```
+```s
 cd src/model/training
 python main.py -script_mode setup
 ```
@@ -168,7 +168,7 @@ python build_dataset.py -sampling_threshold 1000 -maximum_num_images 1000
 
 Idealy you can run the following script in order to conduct a training experiment 
 
-```Shell
+```S
 cd src/model/training
 python main.py -script_mode train -epochs 20 -model_name resnet-50 -use_wandb True -freeze_backbone True -experiment_version 1
 ```
@@ -258,7 +258,7 @@ The selected model performs on the test data pretty same as on the validation da
 
 Also, using the following script you can evaluate any model on any target annotated dataset
 
-```Shell
+```S
 cd src/model/inference
 python eval.py -weights_path models/exp/weights.pth -model_name efficientnet-b0 -eval_data_dir  ../../../data/eval_dataset -main_data_dir ../../../data/
 ```
@@ -271,19 +271,23 @@ python eval.py -weights_path models/exp/weights.pth -model_name efficientnet-b0 
 
 ## Reporting the Overall Receptive field of EfficientNet-B0
 ![picture](assets/rf_concept.png)
-Receptive Field (RF) is defined as the size of the region in the input that produces the feature. Basically, it is a measure of association of an output feature (of any layer) to the input region. Measuring the Overall receptive field depends only on the convolutional parameters of kernels and strides and follows the following equation: 
+
+**Receptive Field (RF)** is defined as the size of the region in the input that produces the feature. Basically, it is a measure of association of an output feature (of any layer) to the input region. Measuring the Overall receptive field depends only on the convolutional parameters of kernels and strides and follows the following equation: 
 
 ![picture](assets/rf_eq.png)
-Where r denotaed the overall RF of the architecture.
+
+Where r denotaed the overall RF of the architecture, k is kernel size, and s is the stride.
 
 Ideally you can run the following script in order to get the overall receptive field of the architecure
 
-```Shell
+```S
 cd src/model/performance_measurement
 python calculate_receptive_field.py --model_name
 ```
 
+
 **For `EfficientNet-B0` the overall RF is `299x299` for an input size of `256x256`.**
+
 
 --------
 ### Additional info: How can we increase the overall receptive field:
@@ -294,6 +298,7 @@ There are ways and tricks to increase the RF, that can be summarized as follows:
 
 The size of the receptive field can be gradually increased by including more convolutional layers. The receptive field is increased by the kernel size for each layer with a stride of 1.
 ![picture](assets/conv_erf.png)
+
 *Increasing the number of layers increases the receptive field, taken from Luo et al.*
 
 * Increasing the kernel size.
@@ -343,7 +348,7 @@ In order to understand how to optimize a Neural Network, we must have a metric. 
     * Calculating the FLOPs of **EfficientNet-B0**
         
         Run the following script
-        ```Shell
+        ```S
         cd src/model/performance_measurement
         python calculate_flops.py --model_name efficientnet-b0
         ```
@@ -395,7 +400,7 @@ In order to understand how to optimize a Neural Network, we must have a metric. 
     The inference time will be FLOPs/FLOPS = (0.53)/(253.38) = 0.002 s or 2ms. 
 
 -----
-### Additional info: What are the most computationally expensive layers in EfficientNet-B0?:
+### Additional info: What are the most computationally expensive layers in EfficientNet-B0 model?:
 -----
 Based on the following equations of how we calculate the FLOPs of a convolution layer, and a fully connected layer
 

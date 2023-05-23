@@ -18,7 +18,7 @@ The DeepFashion Database contains several datasets. In this project, the Categor
 Below is the histogram of the clothing 46 categories :
 ![picture](assets/distrib.png)
 
-## Note:
+## Note
 I have filtered out some of the classes with minimum images (roughly smalled than 1000 images) and ended up with 22 class and 22000 total number of images and that is because the lack of hardware resources to train and conduct multiple experiments on the full dataset.
 
 # Modeling Overview:
@@ -106,6 +106,9 @@ pip install -r requirements.txt
 |       └── experiments_logs.csv
 ├── src
 |    ├── model
+|    │   │── inference
+|    |   |   └── eval.py
+|    |   | 
 |    │   │── performance_measurement
 |    |   |   │── calculate_flops.py
 |    |   |   └── calculate_receptive_field.py
@@ -120,19 +123,21 @@ pip install -r requirements.txt
          └── build_dataset.py
 ```
 # How to use:
-**1-Setup the directories to match the above file structure**
+**1-Setup the directories to match the above file structure and create the training logs csv file**
 ```
+cd src/model/training
 python main.py -script_mode setup
 ```
-**2-Download the zip file of the images and place it inside `/data` directory**
+**2-Download the zip file of the [images](https://drive.google.com/drive/folders/0B7EVK8r0v71pekpRNUlMS3Z5cUk?resourcekey=0-GHiFnJuDTvzzGuTj6lE6og) and place it inside `/data` directory**
 
 **3-Unzip the images inside `/data/classification_data`**
 
-**4-Download the `list_category_img.txt` from the raw dataset and place it inside `/data/classification_data/raw_annotations`**
+**4-Download the [`list_category_img.txt`](https://drive.google.com/drive/folders/0B7EVK8r0v71pWWxJeGVqMjRkUVE?resourcekey=0-sICGfjSkFn6dLpFAwLx8pw) from the raw dataset and place it inside `/data/classification_data/raw_annotations`**
 
 **5- Build the dataset from raw annotations to a CSV file will be used in training and a mapping json file to map label_id to label_str**
 ```s
-python build_dataset.py -sampling_threshold 500 -maximum_num_images 1000
+cd src/data
+python build_dataset.py -sampling_threshold 1000 -maximum_num_images 1000
 ```
 ```
 --sampling_threshold        Threshold for filtering out the minor classes
@@ -147,6 +152,7 @@ python build_dataset.py -sampling_threshold 500 -maximum_num_images 1000
 Idealy you can run the following script in order to conduct a training experiment 
 
 ```Shell
+cd src/model/training
 python main.py -script_mode train -epochs 20 -model_name resnet-50 -use_wandb True -freeze_backbone True -experiment_version 1
 ```
 ```
@@ -225,21 +231,220 @@ trained on 20 epochs for fair comparison.
 * Using Data augmentation on the training data such (`RandomCrop`, `RandomHorizontalFlip`, `RandomHorizontalFlip`, and `RandomVerticalFlip`) didn't leed to better results, but overall decreases the overfitting.
 * We may use the training top losses to check the quality of the data annotations.
 * The category annotations only not suitble to build a powerful classifier for clothing articles.
+* Use [Grad-CAM](https://github.com/omarsayed7/Grad-CAM) for interpreting the classifier and see how the model relate the input to the predicted class.
 
 # Model Selection:
 My own criteria for selecting the best model from the previous experiments is based on a very important metric for any multi-class classification problem and it is `F1-Score`. Also keeping on my mind the deployment factors such as (model size and capacity, FLOPS, FLOPs). **`EfficientNet-B0`** achieves a good results among the validation macro f1-score, latency, and the model capacity, and I believe that EfficientNet-B0 gives the best convergence, results due to the small amount of parameters that is only need to 20 epochs only, maybe the other architectures needs more epochs to converge and perfrom better due to the bigger the number of model parameters.
 
 ## EfficientNet-B0 evaluation on the test set
+The selected model performs on the test data pretty same as on the validation data and got `Macro-F1 score = 60%`, and that is a good indication of generalizing the selected model.
+
+Also, using the following script you can evaluate any model on any target annotated dataset
+
+```Shell
+cd src/model/inference
+python eval.py -weights_path models/exp/weights.pth -model_name efficientnet-b0 -eval_data_dir  ../../../data/eval_dataset -main_data_dir ../../../data/
+```
+```
+--weights_path              Path to the weights of the model.
+--model_name                Model name.
+--eval_data_dir             Path to the evaluation data.
+--main_data_dir             Path to the main data directory of the project.
+```
 
 ## Reporting the Overall Receptive field of EfficientNet-B0
+![picture](assets/rf_concept.png)
+Receptive Field (RF) is defined as the size of the region in the input that produces the feature. Basically, it is a measure of association of an output feature (of any layer) to the input region. Measuring the Overall receptive field depends only on the convolutional parameters of kernels and strides and follows the following equation: 
 
-## Measuring the Per
+![picture](assets/rf_eq.png)
+Where r denotaed the overall RF of the architecture.
+
+Ideally you can run the following script in order to get the overall receptive field of the architecure
+
+```Shell
+cd src/model/performance_measurement
+python calculate_receptive_field.py --model_name
+```
+
+**For `EfficientNet-B0` the overall RF is `299x299` for an input size of `256x256`.**
+
+--------
+### Additional info: How can we increase the overall receptive field:
+--------
+
+There are ways and tricks to increase the RF, that can be summarized as follows:
+* Add more convolutional layers (make the network deeper).
+
+The size of the receptive field can be gradually increased by including more convolutional layers. The receptive field is increased by the kernel size for each layer with a stride of 1.
+![picture](assets/conv_erf.png)
+*Increasing the number of layers increases the receptive field, taken from Luo et al.*
+
+* Increasing the kernel size.
+
+Kernels with a large size can be helpful for incorporating information with large receptive fields,
+
+To explain what I mean: a kernel of size 3x3 can “see” (has a receptive field of) a 9 pixel square. By contrast, a 5x5 kernel size has a receptive field of 25 pixels in a square. This means that during each dot product, the kernel will be able to incorporate more information. So bigger kernel sizes=better, right?
+
+As it turns out, you can get the same receptive field size by stacking two 3x3 layers. Ignoring computational benefits (although they're quite large, since too many parameters can lead to overfitting), if you have two stacked layers, you can insert nonlinearities between them, which increases the representational power of the network and subsequently, leads to an accuracy increase.
+
+* Add pooling layers.
+
+Max pooling and average pooling are two types of 2D pooling layers that lower the spatial dimensions while expanding the receptive field. Pooling layers aid in capturing larger context and reducing geographical information by downsampling the input.
+
+* Use Depth-wise convolutions.
+
+Depthwise convolution is the channel-wise spatial convolution. However, note that depth-wise convolutions do not directly increase the receptive field. But since we use fewer parameters with more compact computations, we can add more layers. Thus, with roughly the same number of parameters, we can get a bigger receptive field.
+
+* Use Dilated convolutions.
+
+Dilations introduce “holes” in a convolutional kernel. The “holes” basically define a spacing between the values of the kernel. So, while the number of weights in the kernel is unchanged.
+
+The receptive field grows exponentially while the number of parameters grows linearly. In other words, a 3x3 kernel with a dilation rate of 2 will have the same receptive field as a 5x5 kernel, while only using 9 parameters. Similarly, a 3x3 kernel with a dilation rate of 4 will have the same receptive field as a 9x9 kernel without dilation.
+
+-------
+
+### Additional info: How can we decrease the overall receptive field:
+----
+
+You can reduce the kernel size if your assignment calls for concentration on smaller details or regional patterns. For instance, substituting 1x1 or 2x2 kernels for 3x3 convolutional layers reduces the receptive field, allowing the network to focus on more focused areas of the input.
 
 
+It's crucial to remember that configuring the receptive field requires careful consideration of your task's requirements and the trade-off between catching local information and overall context. Finding the ideal receptive field size for your application frequently requires testing and fine-tuning.
+
+------------
+## Measuring the Performance of the **EfficientNet-b0** model:
+------------
+In order to understand how to optimize a Neural Network, we must have a metric. That metric will be the inference time. In order to measure this time, we must understand 3 ideas: FLOPs, FLOPS, and MACs.
+
+* FLOPs 
+
+    To measure inference time for a model, we can calculate the total number of computations the model will have to perform.
+    This is where we mention the term FLOP, or Floating Point Operation.
+    This could be an addition, subtraction, division, multiplication, or any other operation that involves a floating point value.
+    The FLOPs will give us the complexity of our model.
+
+    * Calculating the FLOPs of **EfficientNet-B0**
+        
+        Run the following script
+        ```Shell
+        cd src/model/performance_measurement
+        python calculate_flops.py --model_name efficientnet-b0
+        ```
+        The script will output every FLOPs per layer and the overall FLOPs of the architecture as follows:
+        ```
+        Operation                            OPS        
+        -----------------------------------  ---------
+        model_features_0_0                   14155776
+        model_features_0_1                   1048576
+        model_features_1_0_block_0_0         4718592
+        model_features_1_0_block_0_1         1048576
+        model_feature
+        .
+        .
+        .
+        mul_15                               147456
+        model_features_7_0_block_3_0         23592960
+        model_features_7_0_block_3_1         40960      
+        model_features_8_0                   26214400
+        model_features_8_1                   163840
+        model_avgpool                        81920
+        model_classifier_1                   327936
+        fc2                                  5654
+        ----------------------------------   --------
+        Input size: (1, 3, 256, 256)
+        529,669,522 FLOPs or approx. 0.53 GFLOPs
+        ```
+
+        **So, the overall FLOPs of EfficientNet-B0 is 0.53 GFLOPs**
+
+* MACCs
+    The final thing to consider is the MACs, standing for Multiply-Accumulate Computations.
+    A MAC is an operation that does an addition and a multiplication, so 2 operations.
+    In a neural network, addition and multiplications happen every time.
+
+    Layeroutput​=W1​∗A1​+W2​∗A2​+...+Wn​∗An
+
+    As a rule, we consider `1 MAC = 2 FLOPs`.
+
+    **So, the overall MACCs of EfficientNet-B0 is 1.06 G**
+
+
+* FLOPS 
+    The second thing is the FLOPS, with a capital S.
+    FLOPS are the Floating Point Operations per Second. This is a rate that tells us how good is our hardware.
+    The more operations per second we can do, the faster the inference will be.
+
+    So, we conduct the experiments on Tesla T4 GPU and it has max GFLOPS of `253.38`, 
+    The inference time will be FLOPs/FLOPS = (0.53)/(253.38) = 0.002 s or 2ms. 
+
+-----
+### Additional info: What are the most computationally expensive layers in EfficientNet-B0?:
+-----
+Based on the following equations of how we calculate the FLOPs of a convolution layer, and a fully connected layer
+
+Convolutions FLOPs = 2x Number of Kernel x Kernel Shape x Output Shape
+
+Fully Connected Layers FLOPs = 2x Input Size x Output Size
+
+The most computationaly expensive layers in any CNN-based models are the CNN layer and the Full connected layers.
+
+For the **EfficientNet-B0** the most computationally expensive layers are the first CNN layer of every block of the 7 blocks of the model.
+
+-----
+### Additional info: How can we decrease FLOPs and MACCs?
+-----
+When we reduce the number of operations, we are replacing some operations with others that are more efficient. To decrease FLOPS and MACCs per layer, one can consider the following strategies:
+
+* Applying model optimization techniques:
+
+    The complexity of the computation can be reduced by reducing the amount of parameters in the network using strategies like weight sharing, quantization, and pruning. For instance, pruning strategies eliminate useless connections or neurons, which lowers FLOPS and MACCs.
+
+* Decrasing the floating point of the weights:
+
+    Lower precision choices like 16-bit floating-point or even fixed-point arithmetic can be utilised in place of higher precision floating-point operations (like 32-bit floating-point). Due to the decrease in computations needed for each operation, FLOPS and MACCs are also decreased.
+
+* Reducing the input size:
+
+    The quantity of operations needed in each layer reduces as the spatial dimensions of the input increase. This can be accomplished using strategies like pooling and downsampling. For instance, pooling layers with bigger strides or employing strided convolutions can minimise the spatial dimensions, which in turn reduces FLOPS and MACCs.
+
+* Specific solution: Using Separable Convolutions:
+
+    Pooling is great, but when calculating the number of FLOPs, it's still expensive. A separable convolution is a convolutional layer that divides the standard convolutional layer into two layers: a depthwise convolution and a pointwise convolution.
+    
+    A depthwise convolution is a normal convolution, but we don't change the depth. We're therefore reducing the number of FLOPs.
+
+
+In conclusion, lowering network depth or width, employing lower precision, using model optimisation approaches, and using specialised hardware are some methods for reducing FLOPS and MACCs per layer. These techniques can be carefully considered in order to lessen computing complexity and improve network effectiveness.
+
+-----------------
 
 # Future Work:
+* Check the quality of the full dataset.
+* Train the model with the full dataset, and also use any sampling of data augmentation techniques to increase the images of the minor classes.
+* Conduct many experiments with different sets of hyperparameters to get better results specially increase the number of training epochs to converge on a such big dataset like DeepFashion.
+* If we want to use the classifier model on an edge device or web server, we have to optimize the model like use dynamic quantization and exporting the model to ONNX.
+
 
 # Reference
 
+[Fashion clothing category classification Shewta et. al.](https://cs230.stanford.edu/projects_fall_2018/reports/12449289.pdf)
 
+[DeepFashion dataset page](https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html)
 
+[Optimize Deep Learning models](https://www.thinkautonomous.ai/blog/deep-learning-optimization/)
+
+[Receptive Field Refinment Mats. et. al](https://arxiv.org/pdf/2211.14487.pdf)
+
+[Tesla T4 HPC Performance Benchmarks](https://www.microway.com/hpc-tech-tips/nvidia-turing-tesla-t4-hpc-performance-benchmarks/)
+
+[EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks](https://arxiv.org/abs/1905.11946)
+
+[Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
+
+[Very Deep Convolutional Networks for Large-Scale Image Recognition](https://arxiv.org/abs/1409.1556)
+
+[pytorch-estimate-flops](https://github.com/1adrianb/pytorch-estimate-flops)
+
+[Weights & Biases](https://wandb.ai/)
+
+[PyTorch Deep Learning framework](https://pytorch.org/)

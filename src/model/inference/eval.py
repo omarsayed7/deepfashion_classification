@@ -72,7 +72,7 @@ def eval(args):
     model.to(device)
 
     model.eval()
-    print('Calculating the confusion matrix')
+    print('Starting to Evaluate on the data {args.eval_data_dir}')
     predlist=torch.zeros(0,dtype=torch.long, device='cpu')
     lbllist=torch.zeros(0,dtype=torch.long, device='cpu')
     valid_running_correct = 0
@@ -106,10 +106,10 @@ if __name__ == "__main__":
     Main function, used to parse the arguments and call the main function
     '''
     parser = argparse.ArgumentParser(description="Configuration of setup and training process")
-    parser.add_argument('-weights_path', '--weights_path', type= str, help= 'number of epochs', default = "../../../models/resnet-50_0.0001_True_64_categorical_crossentropy_0.5_1_V1/best_model.pth")
-    parser.add_argument('-model_name', '--model_name', type= str, help= 'Either freeze the backbone layers or not', default="resnet-50")
-    parser.add_argument('-eval_data_dir', '--eval_data_dir', type= str, help= 'Track the experiments with wandb', default="../../../data/eval_dataset")
-    parser.add_argument('-main_data_dir', '--main_data_dir', type= str, help= 'Evaluation subset of data (train, valid, or test)', default="../../../data")
+    parser.add_argument('-weights_path', '--weights_path', type= str, help= 'path to the weights of the model', default = "../../../models/resnet-50_0.0001_True_64_categorical_crossentropy_0.5_1_V1/best_model.pth")
+    parser.add_argument('-model_name', '--model_name', type= str, help= 'model name', default="resnet-50")
+    parser.add_argument('-eval_data_dir', '--eval_data_dir', type= str, help= 'path to the evaluation data', default="../../../data/eval_dataset")
+    parser.add_argument('-main_data_dir', '--main_data_dir', type= str, help= 'path to the main data directory of the project', default="../../../data")
     args = parser.parse_args()
 
     args1 = args

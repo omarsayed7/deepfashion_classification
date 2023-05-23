@@ -2,6 +2,23 @@
 
 Repo containing the training of a classifier for clothing articles
 
+# Table of Content:
+1. [Introduction](#introduction)
+2. [Dataset Summary](#dataset-summary)
+3. [Modeling Overview](#modeling-overview)
+4. [Installation](#installation)
+5. [Project File Structure](#project-structure)
+6. [How to Use step by step](#how-to-use)
+7. [Training Experiments](#training-results)
+8. [Best Model Selection](#model-selection)
+9. [Reporting the Receptive Field](#reporting-the-overall-receptive-field-of-efficientnet-b0)
+10. [Reporting the FLOPs and MACCs ](#measuring-the-performance-of-the-efficientnet-b0-model)
+11. [Future Work](#future-work)
+12. [Reference](#references)
+
+
+
+
 # Introduction 
 Online shopping for fashion items is a complex multi-step process. Part of the problem lies 
 in incorrect annotations associated with a particular item like mismatches in style, fabric quality, 
@@ -425,7 +442,7 @@ In conclusion, lowering network depth or width, employing lower precision, using
 * If we want to use the classifier model on an edge device or web server, we have to optimize the model like use dynamic quantization and exporting the model to ONNX.
 
 
-# Reference
+# References
 
 [Fashion clothing category classification Shewta et. al.](https://cs230.stanford.edu/projects_fall_2018/reports/12449289.pdf)
 

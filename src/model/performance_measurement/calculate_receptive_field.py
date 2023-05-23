@@ -204,21 +204,30 @@ def receptive_field_for_unit(receptive_field_dict, layer, unit_position):
         return rf_range
     else:
         raise KeyError("Layer name incorrect, or not included in the model.")
-    
-import torchvision
-#model = torchvision.models.vgg16(pretrained=True) 
-#dict = receptive_field(model.features, input_size=(3, 224, 224))
-# print(dict)
 
-#ResNet50
-# model = torchvision.models.resnet50(pretrained=True) 
-# del model.avgpool 
-# del model.fc 
-# dict = receptive_field(model.conv1, input_size=(3, 224, 224))
-# dict = receptive_field(model.maxpool, input_size=(64, 224, 224))
-# dict = receptive_field(model.layer1, input_size=(64, 224, 224))
-# dict = receptive_field(model.layer2, input_size=(256, 224, 224))
-# dict = receptive_field(model.layer3, input_size=(512, 224, 224))
-# dict = receptive_field(model.layer4, input_size=(1024, 224, 224))
+
+import torchvision, argparse
+if __name__ == "__main__":
+    '''
+    Main function, used to parse the arguments and call the main function
+    '''
+    parser = argparse.ArgumentParser(description="Evaluation on a data")
+    parser.add_argument('-model_name', '--model_name', type= str, help= 'model name', default="resnet-50")
+    args = parser.parse_args()
+
+    if args.model_name == "vgg-16":
+        model = torchvision.models.vgg16(pretrained=True) 
+        dict = receptive_field(model.features, input_size=(3, 224, 224))
+        print(dict)
+    elif args.model_name == "resnet-50":
+        model = torchvision.models.resnet50(pretrained=True) 
+        del model.avgpool 
+        del model.fc 
+        dict = receptive_field(model.conv1, input_size=(3, 224, 224))
+        dict = receptive_field(model.maxpool, input_size=(64, 224, 224))
+        dict = receptive_field(model.layer1, input_size=(64, 224, 224))
+        dict = receptive_field(model.layer2, input_size=(256, 224, 224))
+        dict = receptive_field(model.layer3, input_size=(512, 224, 224))
+        dict = receptive_field(model.layer4, input_size=(1024, 224, 224))
 
 

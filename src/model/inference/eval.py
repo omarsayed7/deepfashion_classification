@@ -105,7 +105,7 @@ if __name__ == "__main__":
     '''
     Main function, used to parse the arguments and call the main function
     '''
-    parser = argparse.ArgumentParser(description="Configuration of setup and training process")
+    parser = argparse.ArgumentParser(description="Evaluation on a data")
     parser.add_argument('-weights_path', '--weights_path', type= str, help= 'path to the weights of the model', default = "../../../models/resnet-50_0.0001_True_64_categorical_crossentropy_0.5_1_V1/best_model.pth")
     parser.add_argument('-model_name', '--model_name', type= str, help= 'model name', default="resnet-50")
     parser.add_argument('-eval_data_dir', '--eval_data_dir', type= str, help= 'path to the evaluation data', default="../../../data/eval_dataset")
